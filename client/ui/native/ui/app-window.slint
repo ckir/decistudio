@@ -1,79 +1,150 @@
-import { VerticalBox, HorizontalBox, Button, StandardListView, TextEdit } from "std-widgets.slint";
+import { VerticalBox, HorizontalBox, Button, StandardListView, TextEdit, ComboBox, ScrollView, LineEdit } from "std-widgets.slint";
 
-/// The main application window for DeciStudio.
-/// 
-/// This component implements a VS Code-style layout. 
-/// Note: No fixed width/height are set here to allow the 
-/// Rust backend to maximize the window on startup.
+/// Main Window for DeciStudio.
 export component AppWindow inherits Window {
-    title: "DeciStudio IDE";
-    
-    // Preferred sizes provide a fallback if the window is un-maximized
-    preferred-width: 1100px;
+    title: "DeciStudio";
+    preferred-width: 1200px;
     preferred-height: 800px;
-    background: #1e1e1e; 
+    background: #1e1e1e;
 
-    // Public property to control the workspace content
-    in-out property <string> editor-content: "";
+    // --- State Properties ---
+    in-out property <string> editor-content;
+    in-out property <bool> show-settings: false;
+    in-out property <string> ui-language: "English";
+    in-out property <bool> is-public-mode: false;
+    in-out property <string> server-url: "";
 
-    VerticalLayout {
-        HorizontalLayout {
-            // 1. Activity Bar
-            Rectangle {
-                width: 50px;
-                background: #333333;
-                VerticalLayout {
-                    padding: 10px; spacing: 20px; alignment: start;
-                    Rectangle { height: 30px; background: #cccccc; border-radius: 4px; }
-                    Rectangle { height: 30px; background: #555555; border-radius: 4px; }
-                }
-            }
+    // --- Callbacks ---
+    callback settings-changed(string, bool, string);
 
-            // 2. Side Bar
-            Rectangle {
-                width: 250px;
-                background: #252526;
-                border-width: 1px;
-                border-color: #1e1e1e;
-                VerticalLayout {
-                    padding: 12px;
-                    Text { text: "EXPLORER"; font-size: 11px; font-weight: 700; color: #bbbbbb; }
-                    StandardListView {
-                        model: [ { text: "src" }, { text: "target" }, { text: "Cargo.toml" } ];
-                    }
-                }
-            }
-
-            // 3. Editor Segment
+    HorizontalLayout {
+        // 1. Activity Bar
+        Rectangle {
+            width: 50px; background: #333333;
             VerticalLayout {
-                Rectangle {
-                    background: #1e1e1e;
-                    TextEdit {
-                        text: root.editor-content;
-                        font-family: "monospace";
-                        font-size: 14px;
+                padding: 10px; spacing: 20px;
+                alignment: start; // Icons now anchored to top
+
+                // Settings Gear (TOP)
+                TouchArea {
+                    height: 40px; 
+                    clicked => { root.show-settings = !root.show-settings; }
+                    Rectangle {
+                        background: root.show-settings ? #007acc : #444444;
+                        border-radius: 4px;
+                        Text { text: "⚙"; color: white; font-size: 22px; horizontal-alignment: center; vertical-alignment: center; }
                     }
                 }
-                // Terminal
-                Rectangle {
-                    height: 200px;
-                    background: #1e1e1e;
-                    border-width: 1px;
-                    border-color: #333333;
-                    VerticalLayout {
-                        padding: 10px;
-                        Text { text: "TERMINAL"; font-size: 11px; color: #ffffff; }
-                    }
+
+                // Explorer Icon Placeholder
+                Rectangle { height: 35px; background: #555555; border-radius: 4px; } 
+            }
+        }
+
+        // 2. Side Bar
+        Rectangle {
+            width: 250px; background: #252526;
+            VerticalLayout {
+                padding: 12px;
+                Text { text: "EXPLORER"; font-size: 11px; font-weight: 700; color: #bbbbbb; }
+                StandardListView {
+                    model: [ { text: "src/main.rs" }, { text: "Cargo.toml" } ];
                 }
             }
         }
-        // Status Bar
-        Rectangle {
-            height: 25px;
-            background: #007acc;
-            HorizontalLayout {
-                padding-left: 10px;
-                Text { text: "Ready"; color: white; vertical-alignment: center; font-size: 12px; }
+
+        // 3. Main Editor Area
+        VerticalLayout {
+            // Tab Bar
+            Rectangle {
+                height: 35px; background: #252526;
+                HorizontalLayout {
+                    TouchArea {
+                        clicked => { root.show-settings = false; }
+                        Rectangle {
+                            width: 120px;
+                            background: !root.show-settings ? #1e1e1e : #2d2d2d;
+                            Text { text: "main.rs"; color: !root.show-settings ? white : #888888; horizontal-alignment: center; vertical-alignment: center; }
+                        }
+                    }
+                    if (root.show-settings) : Rectangle {
+                        width: 120px; background: #1e1e1e;
+                        Text { text: "Settings"; color: white; horizontal-alignment: center; vertical-alignment: center; }
+                    }
+                }
+            }
+
+            // Content Area
+            Rectangle {
+                background: #1e1e1e;
+                
+                // Editor View
+                if (!root.show-settings) : TextEdit {
+                    text <=> root.editor-content;
+                    font-family: "monospace";
+                    font-size: 14px;
+                }
+
+                // Settings View
+                if (root.show-settings) : ScrollView {
+                    VerticalBox {
+                        padding: 30px; spacing: 25px;
+                        alignment: start;
+                        
+                        Text { text: "Settings"; font-size: 28px; color: white; }
+                        Rectangle { height: 1px; background: #333; } 
+                        
+                        // Language Section
+                        VerticalLayout {
+                            spacing: 8px;
+                            Text { text: "UI Language"; color: #cccccc; }
+                            ComboBox {
+                                model: ["English", "Spanish", "French", "German"];
+                                current-value: root.ui-language;
+                                selected => { 
+                                    root.ui_language = self.current-value;
+                                    root.settings-changed(root.ui-language, root.is-public-mode, root.server-url);
+                                }
+                            }
+                        }
+
+                        // Mode Section
+                        VerticalLayout {
+                            spacing: 8px;
+                            Text { text: "Operation Mode"; color: #cccccc; }
+                            HorizontalLayout {
+                                spacing: 10px; alignment: start;
+                                Button {
+                                    text: "Local"; primary: !root.is-public-mode;
+                                    clicked => {
+                                        root.is-public-mode = false;
+                                        root.settings-changed(root.ui-language, root.is-public-mode, root.server-url);
+                                    }
+                                }
+                                Button {
+                                    text: "Public"; primary: root.is-public-mode;
+                                    clicked => {
+                                        root.is-public-mode = true;
+                                        root.settings-changed(root.ui-language, root.is-public-mode, root.server-url);
+                                    }
+                                }
+                            }
+                        }
+
+                        // Server URL Section (Official LineEdit for editability & redraw stability)
+                        if (root.is-public-mode) : VerticalLayout {
+                            spacing: 8px;
+                            Text { text: "Server URL"; color: #cccccc; }
+                            LineEdit {
+                                text <=> root.server-url; // Correct Two-Way Binding
+                                placeholder-text: "https://api.decistudio.com";
+                                edited => {
+                                    root.settings-changed(root.ui-language, root.is-public-mode, self.text);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }

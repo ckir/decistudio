@@ -4,7 +4,17 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+# Shared workspace dependencies
 anyhow = { workspace = true }
 thiserror = { workspace = true }
-serde = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
+
+# Web-specific storage (LocalStorage wrapper)
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+gloo-storage = "0.3"
+wasm-bindgen = "0.2"
+
+# Native-specific storage (System paths for Windows/Linux/macOS)
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+directories = "5.0"
