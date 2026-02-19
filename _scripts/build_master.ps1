@@ -31,47 +31,51 @@ function Build-Native {
     if ($LASTEXITCODE -ne 0) { Fail "Native build failed." }
 }
 
-function Build-WASM {
-    Write-Host "`n--- Building WASM Client ---" -ForegroundColor Cyan
-    $wasmTargetDir = Path-Abs "target/wasm-web-dist"
+# Function to build and serve the WASM client
+function Build-Wasm {
+    Write-Host "--- Building WASM Client ---" -ForegroundColor Cyan
     
-    # Push into WASM dir to ensure build.rs runs correctly
-    Push-Location (Path-Abs "client/ui/wasm")
+    # 1. Navigate to WASM directory
+    Push-Location "client/ui/wasm"
+    
+    # 2. Compile to WebAssembly
+    # Using --release for optimized performance and smaller footprint
     cargo build --target wasm32-unknown-unknown --release
-    if ($LASTEXITCODE -ne 0) { Pop-Location; Fail "WASM compilation failed." }
-    Pop-Location
-
-    # Prepare distribution folder in target
-    $wasmFile = Path-Abs "target/wasm32-unknown-unknown/release/decistudio_client_ui_wasm.wasm"
-    if (Test-Path $wasmTargetDir) { Remove-Item $wasmTargetDir -Recurse -Force }
-    New-Item -ItemType Directory -Path $wasmTargetDir | Out-Null
-
-    Write-Host "Generating Bindings..."
-    wasm-bindgen --target web --out-dir $wasmTargetDir --no-typescript $wasmFile
     
-# 3. Create HTML Runner with Canvas
-# Update this section within your Build-WASM function in _scripts\build_master.ps1
-    @"
+    # 3. Generate Bindings
+    # This creates the JS glue code needed to run Rust in the browser
+    wasm-bindgen ../../../target/wasm32-unknown-unknown/release/decistudio_client_ui_wasm.wasm --out-dir pkg --target web --no-typescript
+    
+    # 4. Generate Full-Screen HTML Wrapper
+    # This is critical to mimic VS Code Web by removing margins and scaling the canvas
+    $htmlContent = @"
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>DeciStudio WASM</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { background: #121212; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        /* The canvas must have an ID for Slint to find it */
+        html, body { margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; background: #1e1e1e; }
         #canvas { width: 100%; height: 100%; display: block; }
     </style>
 </head>
 <body>
     <canvas id="canvas"></canvas>
     <script type="module">
-        import init from './decistudio_client_ui_wasm.js';
+        import init from './pkg/decistudio_client_ui_wasm.js';
         init().catch(console.error);
     </script>
 </body>
 </html>
-"@ | Out-File "$wasmTargetDir/index.html" -Encoding utf8
+"@
+    $htmlContent | Out-File -FilePath "index.html" -Encoding utf8
+    
+    # 5. Serve locally
+    # Python is used here as a simple web server
+    Write-Host "Serving IDE at http://localhost:8000" -ForegroundColor Green
+    python -m http.server 8000
+    
+    Pop-Location
 }
 
 # ------------------------------------------------------------------------------

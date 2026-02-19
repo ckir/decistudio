@@ -1,17 +1,79 @@
-import { Button, VerticalBox } from "std-widgets.slint";
+import { VerticalBox, HorizontalBox, Button, StandardListView, TextEdit } from "std-widgets.slint";
 
+/// The main application window for DeciStudio.
+/// 
+/// This component implements a VS Code-style layout. 
+/// Note: No fixed width/height are set here to allow the 
+/// Rust backend to maximize the window on startup.
 export component AppWindow inherits Window {
-    in-out property <int> counter: 42;
-    callback request-increase-value();
-    VerticalBox {
-        Text {
-            text: "Counter: \{root.counter}";
-        }
+    title: "DeciStudio IDE";
+    
+    // Preferred sizes provide a fallback if the window is un-maximized
+    preferred-width: 1100px;
+    preferred-height: 800px;
+    background: #1e1e1e; 
 
-        Button {
-            text: "Increase value";
-            clicked => {
-                root.request-increase-value();
+    // Public property to control the workspace content
+    in-out property <string> editor-content: "";
+
+    VerticalLayout {
+        HorizontalLayout {
+            // 1. Activity Bar
+            Rectangle {
+                width: 50px;
+                background: #333333;
+                VerticalLayout {
+                    padding: 10px; spacing: 20px; alignment: start;
+                    Rectangle { height: 30px; background: #cccccc; border-radius: 4px; }
+                    Rectangle { height: 30px; background: #555555; border-radius: 4px; }
+                }
+            }
+
+            // 2. Side Bar
+            Rectangle {
+                width: 250px;
+                background: #252526;
+                border-width: 1px;
+                border-color: #1e1e1e;
+                VerticalLayout {
+                    padding: 12px;
+                    Text { text: "EXPLORER"; font-size: 11px; font-weight: 700; color: #bbbbbb; }
+                    StandardListView {
+                        model: [ { text: "src" }, { text: "target" }, { text: "Cargo.toml" } ];
+                    }
+                }
+            }
+
+            // 3. Editor Segment
+            VerticalLayout {
+                Rectangle {
+                    background: #1e1e1e;
+                    TextEdit {
+                        text: root.editor-content;
+                        font-family: "monospace";
+                        font-size: 14px;
+                    }
+                }
+                // Terminal
+                Rectangle {
+                    height: 200px;
+                    background: #1e1e1e;
+                    border-width: 1px;
+                    border-color: #333333;
+                    VerticalLayout {
+                        padding: 10px;
+                        Text { text: "TERMINAL"; font-size: 11px; color: #ffffff; }
+                    }
+                }
+            }
+        }
+        // Status Bar
+        Rectangle {
+            height: 25px;
+            background: #007acc;
+            HorizontalLayout {
+                padding-left: 10px;
+                Text { text: "Ready"; color: white; vertical-alignment: center; font-size: 12px; }
             }
         }
     }
