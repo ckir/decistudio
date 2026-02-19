@@ -1,0 +1,16 @@
+[package]
+name = "decistudio-server-standalone"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+decistudio-server-standalone-core = { path = "core" }
+decistudio-server-shared = { path = "../shared" }
+anyhow = { workspace = true }
+fern = { workspace = true }
+log = { workspace = true }
+tokio = { workspace = true }
+
+[[bin]]
+name = "decistudio-server-standalone"
+path = "src/main.rs"

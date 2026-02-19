@@ -1,0 +1,16 @@
+[package]
+name = "decistudio-client-ui-native"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+slint = { workspace = true }
+anyhow = { workspace = true }
+decistudio-client-core = { path = "../../core" }
+
+[build-dependencies]
+slint-build = { workspace = true }
+
+[[bin]]
+name = "decistudio-client-ui-native"
+path = "src/main.rs"

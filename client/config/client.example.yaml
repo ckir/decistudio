@@ -1,0 +1,5 @@
+# Example client configuration
+server:
+  base_url: "http://localhost:8080"
+ui:
+  locale: "en"

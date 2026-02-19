@@ -1,0 +1,16 @@
+[package]
+name = "decistudio-admin-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+decistudio-server-stateless-core = { path = "../core" }
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+fern = { workspace = true }
+log = { workspace = true }
+
+[[bin]]
+name = "decistudio-admin-cli"
+path = "src/main.rs"
